@@ -1,7 +1,7 @@
 I have modified the code by yohaybn to include the following features:
 
 * Appealing styling/colors
-* Indicators for Live or New episodes
+* Indicators for Live or New episodes (don't think the EPG integration supports it, I currently made a script which pulls data from Gracenote to make my own sensors"
 * Pop up descriptions of episodes when clicked
 * Each channel name/logo is a button which can control your harmony remote (if you have one)
 * Logos must be placed in the www/logo folder in this format (channel number.png, eg 114.png, 115.png) Easy to find them online.
@@ -9,8 +9,10 @@ I have modified the code by yohaybn to include the following features:
 Original Card: https://github.com/yohaybn/lovelace-epg-card
 
 Screenshots (I am using the theme [Frosted Glass Dark](https://github.com/wessamlauf/homeassistant-frosted-glass-themes)):
+
 <img width="1031" height="634" alt="image" src="https://github.com/user-attachments/assets/daaa0f3f-fd35-4018-a930-d7c5963d3bc1" />
 <img width="578" height="255" alt="image" src="https://github.com/user-attachments/assets/15ab85b8-a5f2-4d39-98ce-ee4413609660" />
+<img width="494" height="1116" alt="image" src="https://github.com/user-attachments/assets/b68a8fd5-cdd4-40f7-8a35-c6fc8daff2af" />
 
 ## Example Card Configuration (with Harmony remote)
 
