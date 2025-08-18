@@ -33,7 +33,7 @@ class EPGCardEditor extends LitElement {
       new CustomEvent('config-changed', { detail: { config: this.config } })
     );
   }
-  
+
   render() {
     return html`
       <ha-form
@@ -79,6 +79,10 @@ customElements.define('epg-card-editor', EPGCardEditor);
 class EPGCard extends HTMLElement {
   static getConfigElement() {
     return document.createElement('epg-card-editor');
+  }
+
+  static getStubConfig() {
+    return { entities: [], row_height: 40, enable_channel_clicking: true };
   }
 
   set hass(hass) {
@@ -133,8 +137,8 @@ class EPGCard extends HTMLElement {
       const state = this.hass.states[entityId];
       if (!state) return;
       const friendly = state.attributes.friendly_name || '';
-      const channelNum = (friendly.match(/^(\\d+)/) || [])[1] || '';
-      const channelName = friendly.replace(/^\\d+\\s*/, '').replace(/\\s*TV Listings\\s*$/i, '');
+      const channelNum = (friendly.match(/^(\d+)/) || [])[1] || '';
+      const channelName = friendly.replace(/^\d+\s*/, '').replace(/\s*TV Listings\s*$/i, '');
       if (channelName) channelNameToNum[channelName] = channelNum;
 
       const programs = state.attributes.today || {};
@@ -231,18 +235,18 @@ class EPGCard extends HTMLElement {
           background-color: rgba(255, 0, 0, 0.8) !important; border: 2px solid #ff4444 !important;
           animation: live-pulse 2s infinite; box-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
         }
-        .program.live::before { content: \"🔴 \"; font-size: 10px; }
+        .program.live::before { content: "🔴 "; font-size: 10px; }
         .program.new {
           background-color: rgba(0, 255, 0, 0.7) !important; border: 2px solid #00ff44 !important;
           box-shadow: 0 0 8px rgba(0, 255, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
         }
-        .program.new::before { content: \"🆕 \"; font-size: 10px; }
+        .program.new::before { content: "🆕 "; font-size: 10px; }
         .program.live.new {
           background: linear-gradient(45deg, rgba(255, 0, 0, 0.8) 0%, rgba(0, 255, 0, 0.8) 100%) !important;
           border: 2px solid #ffaa00 !important;
           animation: live-new-pulse 2s infinite; box-shadow: 0 0 12px rgba(255, 165, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
         }
-        .program.live.new::before { content: \"🔴🆕 \"; font-size: 9px; }
+        .program.live.new::before { content: "🔴🆕 "; font-size: 9px; }
         @keyframes live-pulse {
           0%, 100% { opacity: 1;}
           50% { opacity: 0.8;}
@@ -290,22 +294,22 @@ class EPGCard extends HTMLElement {
           }
         ` : ''}
       </style>
-      <div class=\"epg-card\">
-        <div class=\"timeline\">${timeline.map(t => `<div>${t}</div>`).join('')}</div>
+      <div class="epg-card">
+        <div class="timeline">${timeline.map(t => `<div>${t}</div>`).join('')}</div>
     `;
 
     Object.entries(epgData).forEach(([channelName, programs]) => {
       const channelNum = channelNameToNum[channelName] || '';
       htmlText += `
-        <div class=\"channel-row\">
-          <div class=\"channel-name\" ${enable_clicking ? `data-channel=\"${channelNum}\"` : ''}>
-            <div class=\"logo-circle\">
-              <img class=\"channel-logo\" src=\"/local/logo/${channelNum}.png\" alt=\"Logo\" />
+        <div class="channel-row">
+          <div class="channel-name" ${enable_clicking ? `data-channel="${channelNum}"` : ''}>
+            <div class="logo-circle">
+              <img class="channel-logo" src="/local/logo/${channelNum}.png" alt="Logo" />
             </div>
-            <div class=\"channel-label\">${channelName}</div>
+            <div class="channel-label">${channelName}</div>
           </div>
-          <div class=\"programs\">
-            <div class=\"current-time-indicator\"></div>
+          <div class="programs">
+            <div class="current-time-indicator"></div>
       `;
 
       programs.forEach((program, idx) => {
@@ -321,14 +325,14 @@ class EPGCard extends HTMLElement {
         if (program.is_live) programClasses += ' live';
         if (program.is_new) programClasses += ' new';
 
-        htmlText += `<div class=\"${programClasses}\" style=\"left: ${left}%; width: ${width}%; z-index: ${2 + idx}\" 
-          data-start=\"${program.start}\" 
-          data-end=\"${program.end}\" 
-          data-title=\"${program.title.replace(/\"/g, '&quot;')}\" 
-          data-desc=\"${(program.desc || '').replace(/\"/g, '&quot;')}\" 
-          data-is-live=\"${program.is_live}\" 
-          data-is-new=\"${program.is_new}\" 
-          data-flags=\"${JSON.stringify(program.flags).replace(/\"/g, '&quot;')}\"> 
+        htmlText += `<div class="${programClasses}" style="left: ${left}%; width: ${width}%; z-index: ${2 + idx}"
+                         data-start="${program.start}"
+                         data-end="${program.end}"
+                         data-title="${program.title.replace(/"/g, '&quot;')}"
+                         data-desc="${(program.desc || '').replace(/"/g, '&quot;')}"
+                         data-is-live="${program.is_live}"
+                         data-is-new="${program.is_new}"
+                         data-flags="${JSON.stringify(program.flags).replace(/"/g, '&quot;')}">
           ${displayTitle}
         </div>`;
       });
@@ -368,19 +372,19 @@ class EPGCard extends HTMLElement {
         const flags = JSON.parse(el.getAttribute('data-flags') || '[]');
 
         let statusBadges = '';
-        if (isLive) statusBadges += `<span style=\"background: #ff0000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;\">🔴 LIVE</span>`;
-        if (isNew) statusBadges += `<span style=\"background: #00aa00; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;\">🆕 NEW</span>`;
+        if (isLive) statusBadges += `<span style="background: #ff0000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">🔴 LIVE</span>`;
+        if (isNew) statusBadges += `<span style="background: #00aa00; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">🆕 NEW</span>`;
 
         const content = `
-          <div style=\"padding: 10px;\">
-            <div style=\"margin-bottom: 10px;\">
+          <div style="padding: 10px;">
+            <div style="margin-bottom: 10px;">
               ${statusBadges}
             </div>
-            <h3 style=\"margin: 0 0 10px 0; color: var(--primary-text-color);\">${title}</h3>
-            <div style=\"margin-bottom: 8px; color: var(--secondary-text-color); font-weight: bold;\">
+            <h3 style="margin: 0 0 10px 0; color: var(--primary-text-color);">${title}</h3>
+            <div style="margin-bottom: 8px; color: var(--secondary-text-color); font-weight: bold;">
               ${start} - ${end}
             </div>
-            <div style=\"color: var(--primary-text-color); line-height: 1.4;\">
+            <div style="color: var(--primary-text-color); line-height: 1.4;">
               ${desc || 'No description available'}
             </div>
           </div>
