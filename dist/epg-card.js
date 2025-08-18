@@ -74,7 +74,7 @@ class EPGCardEditor extends LitElement {
   }
 }
 
-customElements.define('epg-card-editor', EPGCardEditor);
+customElements.define('epg-card', EPGCard);
 
 class EPGCard extends HTMLElement {
   static getConfigElement() {
@@ -436,4 +436,12 @@ class EPGCard extends HTMLElement {
   }
 }
 
-customElements.define('epg-card', EPGCard);
+customElements.define("epg-card-editor", EPGCardEditor);
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "epg-card",
+  name: "EPG Card v2",
+  preview: false, // Optional - defaults to false
+  description: "A custom card for HomeAssistant-EPG!", // Optional
+  documentationURL: "https://github.com/evilpig/lovelace-epg-card", // Adds a help link in the frontend card editor
+});
