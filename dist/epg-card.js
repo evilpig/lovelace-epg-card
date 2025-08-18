@@ -2,7 +2,85 @@ const LitElement = Object.getPrototypeOf(customElements.get("ha-panel-lovelace")
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
 
+class EPGCardEditor extends LitElement {
+  static get properties() {
+    return {
+      hass: { type: Object },
+      config: { type: Object },
+    };
+  }
+
+  constructor() {
+    super();
+    this.config = {};
+  }
+
+  static get styles() {
+    return css`
+      :host {
+        display: block;
+        padding: 16px;
+      }
+    `;
+  }
+
+  setConfig(config) {
+    this.config = config;
+  }
+
+  _valueChanged(ev) {
+    const newValue = ev.detail.value;
+    this.config = { ...this.config, ...newValue };
+    this.dispatchEvent(
+      new CustomEvent('config-changed', { detail: { config: this.config } })
+    );
+  }
+
+  render() {
+    return html`
+      <ha-form
+        .hass=${this.hass}
+        .data=${this.config}
+        .schema=${[
+          {
+            name: 'row_height',
+            selector: {
+              number: { min: 40, max: 300, unit: 'px' },
+            },
+            default: 40,
+          },
+          {
+            name: 'entities',
+            selector: {
+              entity: { domain: 'sensor', multiple: true, integration: 'epg' },
+            },
+          },
+          {
+            name: 'enable_channel_clicking',
+            selector: { boolean: {} },
+            default: true,
+          },
+          {
+            name: 'harmony_entity_id',
+            selector: { entity: { domain: 'remote' } },
+          },
+          {
+            name: 'harmony_device_id',
+            selector: { text: {} },
+          },
+        ]}
+        @value-changed=${this._valueChanged}
+      >
+      </ha-form>
+    `;
+  }
+}
+
 class EPGCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement('epg-card-editor');
+  }
+
   static getStubConfig() {
     return { entities: [], row_height: 40, enable_channel_clicking: true };
   }
@@ -361,6 +439,8 @@ class EPGCard extends HTMLElement {
   }
 }
 
+// CRITICAL: Register editor BEFORE the main card
+customElements.define('epg-card-editor', EPGCardEditor);
 customElements.define('epg-card', EPGCard);
 
 window.customCards = window.customCards || [];
@@ -368,6 +448,6 @@ window.customCards.push({
   type: "epg-card",
   name: "Enhanced EPG Card",
   preview: false,
-  description: "Enhanced EPG Card with Live/New Episode Support and Harmony Remote Integration!",
-  documentationURL: "https://github.com/evilpig/lovelace-epg-card",
+  description: "Enhanced EPG Card with Live/New Episode Support and Visual Editor!",
+  documentationURL: "https://github.com/yohaybn/lovelace-epg-card",
 });
