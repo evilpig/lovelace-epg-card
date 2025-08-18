@@ -19,6 +19,13 @@ class EPGCard extends HTMLElement {
     if (config.row_height === undefined) {
       config.row_height = 40;
     }
+    // Set default Harmony remote settings if not provided
+    if (!config.harmony_entity_id) {
+      config.harmony_entity_id = 'remote.harmony_hub';
+    }
+    if (!config.harmony_device_id) {
+      config.harmony_device_id = '79382863';
+    }
     this.config = config;
   }
 
@@ -287,7 +294,7 @@ class EPGCard extends HTMLElement {
     htmlText += '</div>';
     this.content.innerHTML = htmlText;
 
-    // Attach click events to the entire channel-name (label and icon) with Harmony remote integration
+    // Attach click events to the entire channel-name (label and icon) with configurable Harmony remote
     this.content.querySelectorAll('.channel-name').forEach(el => {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => {
@@ -354,14 +361,19 @@ class EPGCard extends HTMLElement {
     return mins;
   }
 
-  // Enhanced sendChannelNumber method with Harmony Hub integration
+  // Configurable sendChannelNumber method with Harmony Hub integration
   async sendChannelNumber(channelNum) {
     if (!this.hass) return;
+    
+    // Use configured Harmony settings from card config
+    const harmonyEntityId = this.config.harmony_entity_id;
+    const harmonyDeviceId = this.config.harmony_device_id;
+    
     const digits = channelNum.toString().split('');
     for (const digit of digits) {
       await this.hass.callService('remote', 'send_command', {
-        entity_id: 'remote.harmony_hub',
-        device: '79382863',
+        entity_id: harmonyEntityId,
+        device: harmonyDeviceId,
         command: digit,
         num_repeats: 1,
         delay_secs: 0,
@@ -370,8 +382,8 @@ class EPGCard extends HTMLElement {
       await new Promise(resolve => setTimeout(resolve, 400));
     }
     await this.hass.callService('remote', 'send_command', {
-      entity_id: 'remote.harmony_hub',
-      device: '79382863',
+      entity_id: harmonyEntityId,
+      device: harmonyDeviceId,
       command: 'SELECT',
       num_repeats: 1,
       delay_secs: 0,
@@ -381,11 +393,3 @@ class EPGCard extends HTMLElement {
 }
 
 customElements.define('epg-card', EPGCard);
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "epg-card",
-  name: "EPG Card - Modified",
-  preview: false, // Optional - defaults to false
-  description: "A custom card for HomeAssistant-EPG!", // Optional
-  documentationURL: "https://github.com/evilpig/lovelace-epg-card", // Adds a help link in the frontend card editor
-});
