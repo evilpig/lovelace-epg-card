@@ -1,5 +1,9 @@
+I have modified the code by yohaybn to include the following features:
+Added nice styling/colors, indicators for Live/New episodes, pop up descriptions on click, and each channel is a button which can control your harmony remote (if you have one, you will need to check the code and change the device). And logos can be placed in the www/logo folder in this format (channel number.png, eg 114.png, 115.png)
 
+Original Card: https://github.com/yohaybn/lovelace-epg-card
 
+Original Description:
 # Lovelace EPG Card
 
 This is a custom Lovelace card for Home Assistant that displays Electronic Program Guide (EPG) data. It is designed to work in conjunction with the custom Home Assistant integration available at [https://github.com/yohaybn/HomeAssistant-EPG](https://github.com/yohaybn/HomeAssistant-EPG).  **You must install this integration for the card to function correctly.** The card fetches program information from the sensors provided by this integration and presents it in a user-friendly timeline format. Please note that the current styling is basic, and contributions to improve its appearance are highly welcome!
@@ -26,7 +30,7 @@ This is a custom Lovelace card for Home Assistant that displays Electronic Progr
      ```
 
 2. **HACS Installation (Recommended):**
-   - Add the following repository to HACS as a custom repository: `https://github.com/yohaybn/lovelace-epg-card`
+   - Add the following repository to HACS as a custom repository: `https://github.com/evilpig/lovelace-epg-card`
    - Search for "Lovelace EPG Card" in HACS and install it.  HACS will handle the resource inclusion automatically.
 
 ## Configuration
