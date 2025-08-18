@@ -7,15 +7,14 @@ class EPGCardEditor extends LitElement {
     return {
       hass: { type: Object },
       config: { type: Object },
-      _yamlChannels: { type: String },
+      _channelsMap: { type: Object }
     };
   }
 
   constructor() {
     super();
     this.config = {};
-    this._yamlChannels = "";
-    this._debounceTimer = null;
+    this._channelsMap = {};
   }
 
   static get styles() {
@@ -24,10 +23,29 @@ class EPGCardEditor extends LitElement {
         display: block;
         padding: 16px;
       }
-      .yaml-label {
+      .channel-mapping {
+        margin-top: 12px;
+      }
+      .channel-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .channel-label {
+        flex: 1;
         font-weight: 600;
-        margin-top: 16px;
-        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .channel-input {
+        width: 60px;
+        margin-left: 8px;
+        padding: 4px 6px;
+      }
+      label {
+        font-weight: 600;
+        margin-top: 12px;
         display: block;
       }
     `;
@@ -35,13 +53,12 @@ class EPGCardEditor extends LitElement {
 
   setConfig(config) {
     this.config = config;
-    this._yamlChannels = config.channels ? this._toYaml(config.channels) : "";
+    this._channelsMap = config.channels ? {...config.channels} : {};
   }
 
-  updated(changed) {
-    // Synchronize if the config changes externally
-    if (changed.has("config")) {
-      this._yamlChannels = this.config.channels ? this._toYaml(this.config.channels) : "";
+  updated(changedProps) {
+    if (changedProps.has('config')) {
+      this._channelsMap = this.config.channels ? {...this.config.channels} : {};
     }
   }
 
@@ -49,49 +66,22 @@ class EPGCardEditor extends LitElement {
     const newValue = ev.detail.value;
     this.config = { ...this.config, ...newValue };
     this.dispatchEvent(
-      new CustomEvent("config-changed", { detail: { config: this.config } })
+      new CustomEvent('config-changed', { detail: { config: this.config } })
     );
   }
 
-  _yamlChannelsInput(ev) {
-    // Debounced live input: only parse & commit after 600ms pause in typing
-    clearTimeout(this._debounceTimer);
-    this._yamlChannels = ev.target.value;
-    this._debounceTimer = setTimeout(() => {
-      this._parseYamlChannels();
-    }, 600);
-  }
-
-  _yamlChannelsBlur(ev) {
-    // Commit on blur
-    this._yamlChannels = ev.target.value;
-    this._parseYamlChannels();
-  }
-
-  _parseYamlChannels() {
-    let parsed = {};
-    const value = this._yamlChannels;
-    try {
-      value.split("\n").forEach((line) => {
-        if (!line.trim() || line.trim().startsWith("#")) return;
-        const match = line.match(/^\s*([^:]+):\s*["']?([^"']+)["']?\s*$/);
-        if (match) parsed[match[1].trim()] = match[2].trim();
-      });
-    } catch {
-      // ignore parse errors, don't update config
-      return;
+  _channelNumberChanged(ev) {
+    const entityId = ev.target.dataset.entityId;
+    const val = ev.target.value.trim();
+    if (val === '') {
+      delete this._channelsMap[entityId];
+    } else {
+      this._channelsMap = {...this._channelsMap, [entityId]: val};
     }
-    this.config = { ...this.config, channels: parsed };
+    this.config = {...this.config, channels: this._channelsMap};
     this.dispatchEvent(
-      new CustomEvent("config-changed", { detail: { config: this.config } })
+      new CustomEvent('config-changed', { detail: { config: this.config } })
     );
-  }
-
-  _toYaml(obj) {
-    if (!obj) return "";
-    return Object.entries(obj)
-      .map(([k, v]) => `${k}: "${v}"`)
-      .join("\n");
   }
 
   render() {
@@ -101,54 +91,54 @@ class EPGCardEditor extends LitElement {
         .data=${this.config}
         .schema=${[
           {
-            name: "row_height",
-            label: "Row Height (pixels)",
-            selector: {
-              number: { min: 40, max: 300, unit: 'px' },
-            },
+            name: 'row_height',
+            label: 'Row Height (pixels)',
+            selector: { number: { min: 40, max: 300, unit: 'px' } },
             default: 40,
           },
           {
-            name: "entities",
-            label: "Channel Entities",
-            selector: {
-              entity: { domain: "sensor", multiple: true, integration: "epg" },
-            },
+            name: 'entities',
+            label: 'Channel Entities',
+            selector: { entity: { domain: 'sensor', multiple: true, integration: 'epg' } },
           },
           {
-            name: "enable_channel_clicking",
-            label: "Enable Channel Selection",
+            name: 'enable_channel_clicking',
+            label: 'Enable Channel Selection',
             selector: { boolean: {} },
             default: true,
           },
           {
-            name: "harmony_entity_id",
-            label: "Harmony Remote Entity",
-            selector: { entity: { domain: "remote" } },
+            name: 'harmony_entity_id',
+            label: 'Harmony Remote Entity',
+            selector: { entity: { domain: 'remote' } },
           },
           {
-            name: "harmony_device_id",
-            label: "Harmony Device ID",
+            name: 'harmony_device_id',
+            label: 'Harmony Device ID',
             selector: { text: {} },
           },
         ]}
         @value-changed=${this._valueChanged}
       ></ha-form>
-      <label class="yaml-label" for="channels-yaml"
-        >Manual Channel Numbers (entity: "number"):</label
-      >
-      <textarea
-        id="channels-yaml"
-        style="width: 100%; min-height: 80px; font-family: monospace; white-space: pre;"
-        .value=${this._yamlChannels || ""}
-        @input=${this._yamlChannelsInput}
-        @blur=${this._yamlChannelsBlur}
-        placeholder='sensor.my_channel1: "101"
-sensor.my_channel2: "102"'
-        autocomplete="off"
-      ></textarea>
-      <div style="font-size: 13px; color: #888; margin-top: 2px;">
-        <em>Tip: Enter one line per mapping, like: <code>sensor.123_tv: "45"</code></em>
+
+      <label>Manual Channel Numbers per Entity:</label>
+      <div class="channel-mapping">
+        ${(this.config.entities || []).map(
+          (entityId) => html`
+            <div class="channel-row">
+              <div class="channel-label">${entityId}</div>
+              <input
+                class="channel-input"
+                type="text"
+                .value=${this._channelsMap[entityId] || ''}
+                data-entity-id=${entityId}
+                @input=${this._channelNumberChanged}
+                placeholder="e.g. 101"
+                aria-label="Channel number for ${entityId}"
+              />
+            </div>
+          `
+        )}
       </div>
     `;
   }
