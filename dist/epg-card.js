@@ -1,4 +1,6 @@
-import { LitElement, html, css } from 'lit';
+const LitElement = Object.getPrototypeOf(customElements.get("ha-panel-lovelace"));
+const html = LitElement.prototype.html;
+const css = LitElement.prototype.css;
 
 class EPGCardEditor extends LitElement {
   static get properties() {
