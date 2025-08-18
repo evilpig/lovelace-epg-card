@@ -2,87 +2,7 @@ const LitElement = Object.getPrototypeOf(customElements.get("ha-panel-lovelace")
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
 
-class EPGCardEditor extends LitElement {
-  static get properties() {
-    return {
-      hass: { type: Object },
-      config: { type: Object },
-    };
-  }
-
-  constructor() {
-    super();
-    this.config = {};
-  }
-
-  static get styles() {
-    return css`
-      :host {
-        display: block;
-        padding: 16px;
-      }
-    `;
-  }
-
-  setConfig(config) {
-    this.config = config;
-  }
-
-  _valueChanged(ev) {
-    const newValue = ev.detail.value;
-    this.config = { ...this.config, ...newValue };
-    this.dispatchEvent(
-      new CustomEvent('config-changed', { detail: { config: this.config } })
-    );
-  }
-
-  render() {
-    return html`
-      <ha-form
-        .hass=${this.hass}
-        .data=${this.config}
-        .schema=${[
-          {
-            name: 'row_height',
-            selector: {
-              number: { min: 40, max: 300, unit: 'px' },
-            },
-            default: 40,
-          },
-          {
-            name: 'entities',
-            selector: {
-              entity: { domain: 'sensor', multiple: true, integration: 'epg' },
-            },
-          },
-          {
-            name: 'enable_channel_clicking',
-            selector: { boolean: {} },
-            default: true,
-          },
-          {
-            name: 'harmony_entity_id',
-            selector: { entity: { domain: 'remote' } },
-          },
-          {
-            name: 'harmony_device_id',
-            selector: { text: {} },
-          },
-        ]}
-        @value-changed=${this._valueChanged}
-      >
-      </ha-form>
-    `;
-  }
-}
-
-customElements.define('epg-card', EPGCard);
-
 class EPGCard extends HTMLElement {
-  static getConfigElement() {
-    return document.createElement('epg-card-editor');
-  }
-
   static getStubConfig() {
     return { entities: [], row_height: 40, enable_channel_clicking: true };
   }
@@ -97,6 +17,9 @@ class EPGCard extends HTMLElement {
   }
 
   setConfig(config) {
+    if (!config.entities || !Array.isArray(config.entities) || config.entities.length === 0) {
+      throw new Error("You need to define at least one entity.");
+    }
     this.config = config;
   }
 
@@ -110,7 +33,7 @@ class EPGCard extends HTMLElement {
 
     const entities = this.config.entities;
     const row_height = this.config.row_height || 40;
-    const enable_clicking = this.config.enable_channel_clicking !== false; // default true
+    const enable_clicking = this.config.enable_channel_clicking !== false;
     const harmonyEntityId = this.config.harmony_entity_id || 'remote.harmony_hub';
     const harmonyDeviceId = this.config.harmony_device_id || '79382863';
 
@@ -121,7 +44,6 @@ class EPGCard extends HTMLElement {
     const windowMinutes = 240;
     const timelineEnd = timelineStart + windowMinutes;
 
-    // Build timeline labels (4 hrs, every 30min)
     const timeline = [];
     for (let i = 0; i < 8; i++) {
       const totalMins = timelineStart + i * 30;
@@ -131,7 +53,6 @@ class EPGCard extends HTMLElement {
       timeline.push(`${hour % 12 || 12}:${minute.toString().padStart(2, '0')} ${ampm}`);
     }
 
-    // Prepare EPG data and channel mapping
     const epgData = {};
     const channelNameToNum = {};
 
@@ -178,7 +99,6 @@ class EPGCard extends HTMLElement {
     if (currentMins < 6 * 60 && timelineStart > 18 * 60) currentMins += 24 * 60;
     const currentOffset = ((currentMins - timelineStart) / windowMinutes) * 100;
 
-    // Build the HTML with styles and events
     let htmlText = `
       <style>
         .epg-card {
@@ -371,7 +291,6 @@ class EPGCard extends HTMLElement {
         const end = to12Hour(el.getAttribute('data-end'));
         const isLive = el.getAttribute('data-is-live') === 'true';
         const isNew = el.getAttribute('data-is-new') === 'true';
-        const flags = JSON.parse(el.getAttribute('data-flags') || '[]');
 
         let statusBadges = '';
         if (isLive) statusBadges += `<span style="background: #ff0000; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">🔴 LIVE</span>`;
@@ -436,14 +355,19 @@ class EPGCard extends HTMLElement {
       hold_secs: 0,
     });
   }
+
+  getCardSize() {
+    return 5;
+  }
 }
 
-customElements.define("epg-card-editor", EPGCardEditor);
+customElements.define('epg-card', EPGCard);
+
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "epg-card",
-  name: "EPG Card v2",
-  preview: false, // Optional - defaults to false
-  description: "A custom card for HomeAssistant-EPG!", // Optional
-  documentationURL: "https://github.com/evilpig/lovelace-epg-card", // Adds a help link in the frontend card editor
+  name: "Enhanced EPG Card",
+  preview: false,
+  description: "Enhanced EPG Card with Live/New Episode Support and Harmony Remote Integration!",
+  documentationURL: "https://github.com/evilpig/lovelace-epg-card",
 });
