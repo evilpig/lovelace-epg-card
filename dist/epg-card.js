@@ -1,13 +1,12 @@
 const LitElement = Object.getPrototypeOf(customElements.get("ha-panel-lovelace"));
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
-
-class EPGCardEditor extends LitElement {
+class EPGEditor extends LitElement {
   static get properties() {
     return {
       hass: { type: Object },
       config: { type: Object },
-      _channelsMap: { type: Object }
+      _channelsMap: { type: Object },
     };
   }
 
@@ -23,33 +22,149 @@ class EPGCardEditor extends LitElement {
         display: block;
         padding: 16px;
       }
-      .channel-mapping {
-        margin-top: 12px;
+      .section-title {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 8px;
+        color: var(--primary-text-color);
       }
-      .channel-row {
+      .entity-row {
         display: flex;
         align-items: center;
         margin-bottom: 6px;
       }
-      .channel-label {
+      .entity-label {
         flex: 1;
-        font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-weight: 500;
       }
       .channel-input {
         width: 60px;
-        margin-left: 8px;
-        padding: 4px 6px;
+        margin-left: 10px;
+        padding: 4px 5px;
       }
-      label {
-        font-weight: 600;
-        margin-top: 12px;
-        display: block;
+      .helper-text {
+        font-size: 0.9em;
+        color: var(--secondary-text-color);
+        margin-top: 4px;
+        margin-bottom: 12px;
       }
     `;
   }
+
+  setConfig(config) {
+    this.config = config;
+    this._channelsMap = config.channels ? { ...config.channels } : {};
+  }
+
+  updated(changedProps) {
+    if (changedProps.has('config')) {
+      this._channelsMap = this.config.channels ? { ...this.config.channels } : {};
+    }
+  }
+
+  _channelsChanged(ev) {
+    const entityId = ev.target.dataset.entityId;
+    const val = ev.target.value.trim();
+    if (!val) {
+      delete this._channelsMap[entityId];
+    } else {
+      this._channelsMap = { ...this._channelsMap, [entityId]: val };
+    }
+    this.config = { ...this.config, channels: this._channelsMap };
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this.config } }));
+  }
+
+  _configChanged(ev) {
+    this.config = { ...this.config, ...ev.detail.value };
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this.config } }));
+  }
+
+  get _filteredEntities() {
+    if (!this.hass) return [];
+    return Object.entries(this.hass.states)
+      .filter(([entityId, state]) => {
+        return (
+          entityId.startsWith('sensor.') &&
+          (state?.attributes?.integration === 'epg' || entityId.includes('tv_listings'))
+        );
+      })
+      .map(([entityId]) => entityId);
+  }
+
+  render() {
+    // Entities chosen in config intersect with filtered entities for mapping inputs
+    const entities = this.config.entities || [];
+    const filteredEntities = this._filteredEntities;
+    const validEntities = entities.filter((e) => filteredEntities.includes(e));
+
+    return html`
+      <div class="section-title">EPG Card Setup</div>
+      <ha-form
+        .hass=${this.hass}
+        .data=${this.config}
+        .schema=${[
+          {
+            name: 'row_height',
+            label: 'Row Height (pixels)',
+            selector: { number: { min: 40, max: 300, unit: 'px' } },
+            description: 'Height of each row in pixels.',
+            required: true,
+          },
+          {
+            name: 'entities',
+            label: 'TV Listing Entities',
+            description: 'Select your TV listing sensors. Sensors with "tv_listings" typically work best.',
+            selector: { entity: { domain: 'sensor', multiple: true } },
+            required: true,
+          },
+          {
+            name: 'enable_channel_clicking',
+            label: 'Enable Channel Selection',
+            selector: { boolean: {} },
+          },
+          {
+            name: 'harmony_entity_id',
+            label: 'Harmony Remote Entity',
+            selector: { entity: { domain: 'remote'} },
+          },
+          {
+            name: 'harmony_device_id',
+            label: 'Harmony Device ID',
+            selector: { text: {} },
+          },
+        ]}
+        @value-changed=${this._configChanged}
+      ></ha-form>
+
+      <div class="section-title">Manual Channel Numbers per Entity</div>
+      <div class="helper-text">
+        You may enter channel numbers to use for each entity below. This is helpful if the entity doesn't provide channel numbers automatically.
+      </div>
+
+      <div>
+        ${validEntities.map(
+          (entityId) => html`
+            <div class="entity-row">
+              <div class="entity-label">${entityId}</div>
+              <input
+                class="channel-input"
+                type="text"
+                placeholder="e.g. 101"
+                .value=${this._channelsMap[entityId] || ''}
+                @input=${this._channelsChanged}
+                data-entity-id=${entityId}
+                aria-label="Channel number for ${entityId}"
+              />
+            </div>
+          `
+        )}
+      </div>
+    `;
+  }
+}
 
   setConfig(config) {
     this.config = config;
