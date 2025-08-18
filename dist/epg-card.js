@@ -19,13 +19,22 @@ class EPGCard extends HTMLElement {
     if (config.row_height === undefined) {
       config.row_height = 40;
     }
-    // Set default Harmony remote settings if not provided
-    if (!config.harmony_entity_id) {
-      config.harmony_entity_id = 'remote.harmony_hub';
+    
+    // Channel clicking functionality (default: enabled for backwards compatibility)
+    if (config.enable_channel_clicking === undefined) {
+      config.enable_channel_clicking = true;
     }
-    if (!config.harmony_device_id) {
-      config.harmony_device_id = '79382863';
+    
+    // Set default Harmony remote settings if not provided (only if channel clicking is enabled)
+    if (config.enable_channel_clicking) {
+      if (!config.harmony_entity_id) {
+        config.harmony_entity_id = 'remote.harmony_hub';
+      }
+      if (!config.harmony_device_id) {
+        config.harmony_device_id = '79382863';
+      }
     }
+    
     this.config = config;
   }
 
@@ -39,6 +48,7 @@ class EPGCard extends HTMLElement {
     
     const entities = this.config.entities;
     const row_height = this.config.row_height;
+    const enable_clicking = this.config.enable_channel_clicking;
     const now = new Date();
     const startHour = now.getHours();
     const startMinute = Math.floor(now.getMinutes() / 30) * 30;
@@ -104,7 +114,7 @@ class EPGCard extends HTMLElement {
     if (currentMins < 6 * 60 && timelineStart > 18 * 60) currentMins += 24 * 60;
     const currentOffset = ((currentMins - timelineStart) / windowMinutes) * 100;
 
-    // Build HTML with enhanced styling for Live/New episodes and improved channel layout
+    // Build HTML with enhanced styling for Live/New episodes and conditional channel clicking
     let htmlText = `
       <style>
         .epg-card {
@@ -121,9 +131,10 @@ class EPGCard extends HTMLElement {
         .timeline div:last-child { border-right: none; }
         .channel-row { display: flex; align-items: center; margin-bottom: 2px; position: relative; }
         .channel-name {
-          width: 12%; height: ${row_height}px; display: flex; align-items: center; cursor: pointer;
+          width: 12%; height: ${row_height}px; display: flex; align-items: center;
           padding: 0 8px; box-sizing: border-box; user-select: none; outline: none;
           overflow: hidden; /* Prevent content overflow */
+          ${enable_clicking ? 'cursor: pointer;' : 'cursor: default;'}
         }
         .channel-logo {
           height: ${Math.max(30, row_height * 0.75)}px; /* Ensure minimum logo size */
@@ -229,7 +240,8 @@ class EPGCard extends HTMLElement {
           background-color: red; z-index: 3; box-shadow: 0 0 4px red;
           left: ${currentOffset}%; transition: left 0.3s ease;
         }
-        /* Enhanced channel name hover effect */
+        /* Conditional channel name hover effect - only when clicking is enabled */
+        ${enable_clicking ? `
         .channel-name:hover {
           background-color: rgba(255, 255, 255, 0.1);
           border-radius: 4px;
@@ -243,6 +255,7 @@ class EPGCard extends HTMLElement {
           color: var(--accent-color, #03a9f4);
           transition: color 0.2s ease;
         }
+        ` : ''}
       </style>
       <div class="epg-card">
         <div class="timeline">`;
@@ -254,7 +267,7 @@ class EPGCard extends HTMLElement {
       const channelNum = channelNameToNum[channelName] || "";
       htmlText += `
         <div class="channel-row">
-          <div class="channel-name" data-channel="${channelNum}">
+          <div class="channel-name" ${enable_clicking ? `data-channel="${channelNum}"` : ''}>
             <div class="logo-circle">
               <img class="channel-logo" src="/local/logo/${channelNum}.png" alt="Logo" />
             </div>
@@ -294,16 +307,17 @@ class EPGCard extends HTMLElement {
     htmlText += '</div>';
     this.content.innerHTML = htmlText;
 
-    // Attach click events to the entire channel-name (label and icon) with configurable Harmony remote
-    this.content.querySelectorAll('.channel-name').forEach(el => {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', () => {
-        const channelNum = el.getAttribute('data-channel');
-        if (channelNum) this.sendChannelNumber(channelNum);
+    // Conditionally attach click events only if channel clicking is enabled
+    if (enable_clicking) {
+      this.content.querySelectorAll('.channel-name').forEach(el => {
+        el.addEventListener('click', () => {
+          const channelNum = el.getAttribute('data-channel');
+          if (channelNum) this.sendChannelNumber(channelNum);
+        });
       });
-    });
+    }
 
-    // Enhanced click event for browser_mod popup to program segments
+    // Enhanced click event for browser_mod popup to program segments (always enabled)
     this.content.querySelectorAll('.program').forEach(el => {
       el.addEventListener('click', (e) => {
         // Convert 24h time (HH:mm) to 12h format with AM/PM
@@ -364,6 +378,9 @@ class EPGCard extends HTMLElement {
   // Configurable sendChannelNumber method with Harmony Hub integration
   async sendChannelNumber(channelNum) {
     if (!this.hass) return;
+    
+    // Only proceed if channel clicking is enabled
+    if (!this.config.enable_channel_clicking) return;
     
     // Use configured Harmony settings from card config
     const harmonyEntityId = this.config.harmony_entity_id;
