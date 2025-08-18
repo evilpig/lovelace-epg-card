@@ -68,6 +68,7 @@ class EPGCardEditor extends LitElement {
             name: 'harmony_device_id',
             selector: { text: {} },
           },
+          // Manual channel mapping is for YAML only currently.
         ]}
         @value-changed=${this._valueChanged}
       >
@@ -114,6 +115,7 @@ class EPGCard extends HTMLElement {
     const enable_clicking = this.config.enable_channel_clicking !== false;
     const harmonyEntityId = this.config.harmony_entity_id || 'remote.harmony_hub';
     const harmonyDeviceId = this.config.harmony_device_id || '79382863';
+    const manualChannels = this.config.channels || {};
 
     const now = new Date();
     const startHour = now.getHours();
@@ -137,8 +139,17 @@ class EPGCard extends HTMLElement {
     entities.forEach(entityId => {
       const state = this.hass.states[entityId];
       if (!state) return;
+
+      // Channel number: prefer manual config, fallback to autodetect
+      let channelNum = '';
+      if (manualChannels && manualChannels[entityId]) {
+        channelNum = manualChannels[entityId];
+      } else {
+        const friendly = state.attributes.friendly_name || '';
+        channelNum = (friendly.match(/^(\d+)/) || [])[1] || '';
+      }
+
       const friendly = state.attributes.friendly_name || '';
-      const channelNum = (friendly.match(/^(\d+)/) || [])[1] || '';
       const channelName = friendly.replace(/^\d+\s*/, '').replace(/\s*TV Listings\s*$/i, '');
       if (channelName) channelNameToNum[channelName] = channelNum;
 
@@ -439,7 +450,6 @@ class EPGCard extends HTMLElement {
   }
 }
 
-// CRITICAL: Register editor BEFORE the main card
 customElements.define('epg-card-editor', EPGCardEditor);
 customElements.define('epg-card', EPGCard);
 
@@ -448,6 +458,6 @@ window.customCards.push({
   type: "epg-card",
   name: "Enhanced EPG Card",
   preview: false,
-  description: "Enhanced EPG Card with Live/New Episode Support and Visual Editor!",
-  documentationURL: "https://github.com/yohaybn/lovelace-epg-card",
+  description: "Enhanced EPG Card with Live/New Episode Support, Harmony Remote, Visual Editor, and manual channel mapping!",
+  documentationURL: "https://github.com/evilpig/lovelace-epg-card",
 });
