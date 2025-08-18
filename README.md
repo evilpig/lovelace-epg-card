@@ -1,6 +1,19 @@
 I have modified the code by yohaybn to include the following features:
 Added nice styling/colors, indicators for Live/New episodes, pop up descriptions on click, and each channel is a button which can control your harmony remote (if you have one, you will need to check the code and change the device). And logos can be placed in the www/logo folder in this format (channel number.png, eg 114.png, 115.png)
 
+## Example Card Configuration
+
+```yaml
+type: custom:epg-card
+entities:
+  - sensor.101_global_tvlistings
+  - sensor.102_cbc_tvlistings
+  # ... more entities
+row_height: 40
+harmony_entity_id: remote.harmony_hub        # Configurable Harmony entity
+harmony_device_id: "12345678"                # Configurable device ID
+
+```
 Original Card: https://github.com/yohaybn/lovelace-epg-card
 
 Screenshots (I am using the theme [Frosted Glass Dark](https://github.com/wessamlauf/homeassistant-frosted-glass-themes)):
