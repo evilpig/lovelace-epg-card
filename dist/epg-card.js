@@ -7,6 +7,7 @@ class EPGCardEditor extends LitElement {
     return {
       hass: { type: Object },
       config: { type: Object },
+      _yamlChannels: { type: String },
     };
   }
 
@@ -14,6 +15,7 @@ class EPGCardEditor extends LitElement {
     super();
     this.config = {};
     this._yamlChannels = "";
+    this._debounceTimer = null;
   }
 
   static get styles() {
@@ -24,7 +26,8 @@ class EPGCardEditor extends LitElement {
       }
       .yaml-label {
         font-weight: 600;
-        margin-top: 12px;
+        margin-top: 16px;
+        margin-bottom: 4px;
         display: block;
       }
     `;
@@ -35,6 +38,13 @@ class EPGCardEditor extends LitElement {
     this._yamlChannels = config.channels ? this._toYaml(config.channels) : "";
   }
 
+  updated(changed) {
+    // Synchronize if the config changes externally
+    if (changed.has("config")) {
+      this._yamlChannels = this.config.channels ? this._toYaml(this.config.channels) : "";
+    }
+  }
+
   _valueChanged(ev) {
     const newValue = ev.detail.value;
     this.config = { ...this.config, ...newValue };
@@ -43,19 +53,35 @@ class EPGCardEditor extends LitElement {
     );
   }
 
-  _yamlChannelsChanged(ev) {
-    const value = ev.target.value;
-    this._yamlChannels = value;
+  _yamlChannelsInput(ev) {
+    // Debounced live input: only parse & commit after 600ms pause in typing
+    clearTimeout(this._debounceTimer);
+    this._yamlChannels = ev.target.value;
+    this._debounceTimer = setTimeout(() => {
+      this._parseYamlChannels();
+    }, 600);
+  }
 
+  _yamlChannelsBlur(ev) {
+    // Commit on blur
+    this._yamlChannels = ev.target.value;
+    this._parseYamlChannels();
+  }
+
+  _parseYamlChannels() {
     let parsed = {};
+    const value = this._yamlChannels;
     try {
       value.split("\n").forEach((line) => {
         if (!line.trim() || line.trim().startsWith("#")) return;
         const match = line.match(/^\s*([^:]+):\s*["']?([^"']+)["']?\s*$/);
-        if (match) parsed[match[1].trim()] = match[1].trim();
+        if (match) parsed[match[1].trim()] = match[2].trim();
       });
-    } catch { /* ignore errors */ }
-    this.config.channels = parsed;
+    } catch {
+      // ignore parse errors, don't update config
+      return;
+    }
+    this.config = { ...this.config, channels: parsed };
     this.dispatchEvent(
       new CustomEvent("config-changed", { detail: { config: this.config } })
     );
@@ -76,44 +102,54 @@ class EPGCardEditor extends LitElement {
         .schema=${[
           {
             name: "row_height",
+            label: "Row Height (pixels)",
             selector: {
-              number: { min: 40, max: 300, unit: "px" },
+              number: { min: 40, max: 300, unit: 'px' },
             },
             default: 40,
           },
           {
             name: "entities",
+            label: "Channel Entities",
             selector: {
               entity: { domain: "sensor", multiple: true, integration: "epg" },
             },
           },
           {
             name: "enable_channel_clicking",
+            label: "Enable Channel Selection",
             selector: { boolean: {} },
             default: true,
           },
           {
             name: "harmony_entity_id",
+            label: "Harmony Remote Entity",
             selector: { entity: { domain: "remote" } },
           },
           {
             name: "harmony_device_id",
+            label: "Harmony Device ID",
             selector: { text: {} },
           },
         ]}
         @value-changed=${this._valueChanged}
       ></ha-form>
-
       <label class="yaml-label" for="channels-yaml"
         >Manual Channel Numbers (entity: "number"):</label
       >
       <textarea
         id="channels-yaml"
         style="width: 100%; min-height: 80px; font-family: monospace; white-space: pre;"
-        .value=${this._yamlChannels}
-        @input=${this._yamlChannelsChanged}
-        placeholder='sensor.my_channel1: "101"\nsensor.my_channel2: "102"'
+        .value=${this._yamlChannels || ""}
+        @input=${this._yamlChannelsInput}
+        @blur=${this._yamlChannelsBlur}
+        placeholder='sensor.my_channel1: "101"
+sensor.my_channel2: "102"'
+        autocomplete="off"
       ></textarea>
+      <div style="font-size: 13px; color: #888; margin-top: 2px;">
+        <em>Tip: Enter one line per mapping, like: <code>sensor.123_tv: "45"</code></em>
+      </div>
     `;
   }
 }
