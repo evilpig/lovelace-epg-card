@@ -3,6 +3,11 @@ Added nice styling/colors, indicators for Live/New episodes, pop up descriptions
 
 Original Card: https://github.com/yohaybn/lovelace-epg-card
 
+Screenshots (I am using the theme [Frosted Glass Dark](https://github.com/wessamlauf/homeassistant-frosted-glass-themes)):
+<img width="1031" height="634" alt="image" src="https://github.com/user-attachments/assets/daaa0f3f-fd35-4018-a930-d7c5963d3bc1" />
+<img width="578" height="255" alt="image" src="https://github.com/user-attachments/assets/15ab85b8-a5f2-4d39-98ce-ee4413609660" />
+
+
 Original Description:
 # Lovelace EPG Card
 
