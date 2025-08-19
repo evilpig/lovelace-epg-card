@@ -32,6 +32,30 @@ class EPGCardEditor extends LitElement {
       .channel-input { width: 60px; margin-left: 8px; padding: 4px 6px; }
       label { font-weight: 600; margin-top: 12px; display: block; }
       .entity-help { font-size: 13px; color: #888; margin-top: 2px; }
+      .section-title {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 8px;
+        color: var(--primary-text-color);
+      }
+      .entity-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .entity-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+      }
+      .helper-text {
+        font-size: 0.9em;
+        color: var(--secondary-text-color);
+        margin-top: 4px;
+        margin-bottom: 12px;
+      }      
     `;
   }
 
