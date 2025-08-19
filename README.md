@@ -15,6 +15,7 @@ A beautiful, feature-rich Electronic Program Guide card for Home Assistant Lovel
 - **Remote control can be disabled for view-only dashboards**.
 - **Logo support** — Place channel logos as PNGs in `/config/www/logo/` (named by channel number, e.g., `114.png`).
 - **Visual Editor** — Configure everything directly from the Home Assistant UI.
+- **Font selector** — Pick between Google fonts, system fonts, or any custom CSS font-family string.
 
 > **Supports the [Frosted Glass Dark theme](https://github.com/wessamlauf/homeassistant-frosted-glass-themes) and [Quicksand Font](https://fonts.google.com/specimen/Quicksand)** for a sleek, modern look.
 
@@ -59,6 +60,21 @@ row_height: 40
 enable_channel_clicking: false      # Makes the EPG informational only
 ```
 
+### Font Example
+```
+type: custom:epg-card
+entities:
+    sensor.101_global_tvlistings
+row_height: 40
+font_family: 'Roboto, sans-serif'
+```
+
+If using a custom font not in the selector list:
+
+```
+font_family: Custom
+custom_font_family: '"Comic Sans MS", cursive, sans-serif'
+```
 ---
 
 ## 📂 Channel Logo Placement
