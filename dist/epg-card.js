@@ -288,12 +288,220 @@ class EPGCard extends HTMLElement {
           padding: 0px;
           isolation: isolate;
         }
-        /* ... rest of your styles ... (unchanged) ...*/
+        .timeline {
+          display: flex;
+          margin-bottom: 8px;
+          margin-left: 12%;
+          border-bottom: 1px solid var(--divider-color, #444);
+        }
+        .timeline div {
+          flex: 1;
+          text-align: center;
+          font-weight: 600;
+          font-size: 13px;
+          padding: 4px 0;
+          color: var(--secondary-text-color, #bbb);
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
+          box-sizing: border-box;
+        }
+        .timeline div:last-child {
+          border-right: none;
+        }
+        .channel-row {
+          display: flex;
+          align-items: center;
+          margin-bottom: 2px;
+          position: relative;
+        }
+        .channel-name {
+          width: 12%;
+          height: ${row_height}px;
+          display: flex;
+          align-items: center;
+          padding: 0 8px;
+          box-sizing: border-box;
+          user-select: none;
+          outline: none;
+          overflow: hidden;
+          ${enable_clicking ? "cursor: pointer;" : "cursor: default;"}
+        }
+        .channel-logo {
+          height: ${Math.max(30, row_height * 0.75)}px;
+          width: ${Math.max(30, row_height * 0.75)}px;
+          border-radius: 3px;
+          box-sizing: border-box;
+          object-fit: contain;
+          flex-shrink: 0;
+        }
+        .logo-circle {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(1.5px);
+          border: 2px solid rgba(0, 0, 0, 1);
+          border-radius: 50%;
+          width: ${Math.max(35, row_height * 0.85)}px;
+          height: ${Math.max(35, row_height * 0.85)}px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+          margin-right: 6px;
+          flex-shrink: 0;
+        }
+        .channel-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--primary-text-color, #fff);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+        }
+        .programs {
+          position: relative;
+          height: ${row_height}px;
+          width: 88%;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        .program {
+          position: absolute;
+          top: 3px;
+          height: calc(100% - 6px);
+          background-color: rgba(0, 123, 255, 0.6);
+          color: white;
+          border-radius: 4px;
+          padding: 2px 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 500;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+          text-align: center;
+          line-height: 1.2;
+          word-break: break-word;
+          hyphens: auto;
+          overflow: hidden;
+          z-index: 2;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          box-sizing: border-box;
+        }
+        .program.live {
+          background-color: rgba(255, 0, 0, 0.8) !important;
+          border: 2px solid #ff4444 !important;
+          animation: live-pulse 2s infinite;
+          box-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .program.live::before {
+          content: "🔴 ";
+          font-size: 10px;
+        }
+        .program.new {
+          background-color: rgba(0, 255, 0, 0.7) !important;
+          border: 2px solid #00ff44 !important;
+          box-shadow: 0 0 8px rgba(0, 255, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .program.new::before {
+          content: "🆕 ";
+          font-size: 10px;
+        }
+        .program.live.new {
+          background: linear-gradient(
+            45deg,
+            rgba(255, 0, 0, 0.8) 0%,
+            rgba(0, 255, 0, 0.8) 100%
+          ) !important;
+          border: 2px solid #ffaa00 !important;
+          animation: live-new-pulse 2s infinite;
+          box-shadow: 0 0 12px rgba(255, 165, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .program.live.new::before {
+          content: "🔴🆕 ";
+          font-size: 9px;
+        }
+        @keyframes live-pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+        @keyframes live-new-pulse {
+          0% {
+            opacity: 1;
+            box-shadow: 0 0 12px rgba(255, 165, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+          }
+          50% {
+            opacity: 0.9;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.8), 0 1px 3px rgba(0, 0, 0, 0.4);
+          }
+          100% {
+            opacity: 1;
+            box-shadow: 0 0 12px rgba(255, 165, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+          }
+        }
+        .program.narrow {
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          font-size: 10px;
+          -webkit-line-clamp: 1 !important;
+        }
+        .program:hover {
+          z-index: 3 !important;
+          transform: scale(1.02);
+          transition: transform 0.2s ease;
+        }
+        .program.live:hover {
+          box-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .program.new:hover {
+          box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .program.live.new:hover {
+          box-shadow: 0 0 20px rgba(255, 165, 0, 1), 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .current-time-indicator {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background-color: red;
+          z-index: 3;
+          box-shadow: 0 0 4px red;
+          left: ${currentOffset}%;
+          transition: left 0.3s ease;
+        }
+        ${enable_clicking
+          ? `
+          .channel-name:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+          }
+          .channel-name:hover .logo-circle {
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+          }
+          .channel-name:hover .channel-label {
+            color: var(--accent-color, #03a9f4);
+            transition: color 0.2s ease;
+          }
+        `
+          : ""}
       </style>
       <div class="epg-card">
         <div class="timeline">${timeline.map((t) => `<div>${t}</div>`).join("")}</div>
     `;
-    // ... rest of your renderHTML just as before ...
+    
     Object.entries(epgData).forEach(([channelName, programs]) => {
       const channelNum = channelNameToNum[channelName] || "";
       htmlText += `
